@@ -1,0 +1,34 @@
+From 0a567e475aaf1cc61296d387367d769de504bd96 Mon Sep 17 00:00:00 2001
+From: "tcler.yin" <yin-jianhong@163.com>
+Date: Sun, 25 Feb 2018 18:55:02 +0800
+Subject: [PATCH] BmapHelpers.py: fix [Errno 25] Inappropriate ioctl for device
+ (#30)
+
+* BmapHelpers.py: fix [Errno 25] Inappropriate ioctl for device
+
+see detail:
+ https://github.com/01org/bmap-tools/issues/29
+---
+ bmaptools/BmapHelpers.py | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/bmaptools/BmapHelpers.py b/bmaptools/BmapHelpers.py
+index 585695f..ceb9ee3 100644
+--- a/bmaptools/BmapHelpers.py
++++ b/bmaptools/BmapHelpers.py
+@@ -62,9 +62,12 @@ def get_block_size(file_obj):
+
+     # Get the block size of the host file-system for the image file by calling
+     # the FIGETBSZ ioctl (number 2).
+-    binary_data = ioctl(file_obj, 2, struct.pack('I', 0))
+-    bsize = struct.unpack('I', binary_data)[0]
+-    if not bsize:
++    try:
++        binary_data = ioctl(file_obj, 2, struct.pack('I', 0))
++        bsize = struct.unpack('I', binary_data)[0]
++        if not bsize:
++            raise IOError("get 0 bsize by FIGETBSZ ioctl")
++    except IOError as err:
+         stat = os.fstat(file_obj.fileno())
+         if hasattr(stat, 'st_blksize'):
+             bsize = stat.st_blksize
